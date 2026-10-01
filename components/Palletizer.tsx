@@ -312,7 +312,7 @@ export default function Palletizer() {
   return (
     <section className="pallet">
       <header>
-        <p className="label">02 / palletizing</p>
+        <p className="mb-2 text-[0.8rem] uppercase tracking-[0.08em] text-muted">02 / palletizing</p>
         <p>
           A 6-axis arm picking cases off a conveyor and stacking them on a pallet, the kind of cell I write software for.
           Drag to orbit.

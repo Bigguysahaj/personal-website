@@ -1,3 +1,17 @@
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Preflight is intentionally skipped: the hand-written reset below stays in charge. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-ascii: var(--ascii);
+  --color-ascii-strong: var(--ascii-strong);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -34,15 +48,6 @@ body {
 .flicker,
 .flicker body {
   transition: none;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
 }
 
 canvas {
@@ -234,14 +239,6 @@ main {
   padding: 4rem 1rem;
 }
 
-.label {
-  color: var(--muted);
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 0.5rem;
-}
-
 /* --- palletizer --- */
 
 main > section + section {
@@ -351,69 +348,6 @@ main > section + section {
   outline: none;
 }
 
-.card {
-  position: absolute;
-  right: 0;
-  top: 1rem;
-  width: min(24rem, 46%);
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--fg);
-  background: var(--bg);
-  color: var(--fg);
-  font-size: 0.85rem;
-  line-height: 1.55;
-  display: grid;
-  gap: 0.6rem;
-}
-
-.card header {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.card header button {
-  font: inherit;
-  color: inherit;
-  background: none;
-  border: 0;
-  cursor: pointer;
-}
-
-.card header button::before {
-  content: "[";
-}
-
-.card header button::after {
-  content: "]";
-}
-
-.card .muted {
-  color: var(--muted);
-}
-
-.card nav {
-  display: flex;
-  gap: 1rem;
-}
-
-.card a {
-  color: inherit;
-}
-
-@media (max-width: 700px) {
-  .card {
-    left: 0;
-    right: 0;
-    top: auto;
-    bottom: 0;
-    width: auto;
-  }
-}
-
 /* The handle and controller slide horizontally together. */
 .hero-layout { position: relative; overflow: hidden; }
 .hero-layout .hero { height: min(100svh, 72vw); min-height: 360px; }
@@ -448,12 +382,6 @@ main > section + section {
 .controller-title p { font-size: 10px; color: var(--muted); letter-spacing: 0.04em; }
 .controller-status { padding-top: 1rem; border-top: 1px solid color-mix(in srgb, var(--fg) 16%, transparent); color: var(--fg); }
 .controller-code { font-size: 10px; line-height: 1.85; overflow: auto; flex: 1 0 28em; padding: 0.4rem 0; }
-.code-line { display: flex; gap: 0.8rem; padding-right: 0.5rem; color: var(--muted); }
-.code-line.active { color: var(--fg); background: color-mix(in srgb, var(--fg) 7%, transparent); box-shadow: inset 2px 0 var(--fg); }
-.line-number { flex: 0 0 2.4em; text-align: right; opacity: 0.55; user-select: none; }
-.controller-telemetry { display: grid; grid-template-columns: 1fr 1.6fr; gap: 0.75rem; font-size: 10px; border-top: 1px solid color-mix(in srgb, var(--fg) 16%, transparent); padding-top: 1rem; }
-.controller-telemetry dt { color: var(--muted); font-size: 9px; margin-bottom: 0.6rem; }
-.controller-telemetry dd { white-space: nowrap; }
 .controller footer { font-size: 9px; line-height: 1.5; }
 .controller a { color: var(--fg); white-space: nowrap; }
 .controller a:focus-visible, .controller-close:focus-visible { outline: 1px dashed var(--fg); outline-offset: 4px; }
@@ -467,7 +395,3 @@ main > section + section {
   .hero-letters, html, body, .controller, .hero-notch span { transition: none; }
   .pull[data-waiting]::before { animation: none; }
 }
-.controller-views { display: flex; gap: 1rem; }
-.controller-views button { font: inherit; font-size: 10px; border: 0; border-bottom: 1px solid transparent; background: none; color: var(--muted); padding: 0.25rem 0; cursor: pointer; }
-.controller-views button[aria-pressed="true"] { color: var(--fg); border-bottom-color: var(--fg); }
-.controller-views button:focus-visible { outline: 1px dashed var(--fg); outline-offset: 4px; }

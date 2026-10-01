@@ -195,7 +195,7 @@ export default function Projects() {
   return (
     <section className="work">
       <header>
-        <p className="label">03 / work</p>
+        <p className="mb-2 text-[0.8rem] uppercase tracking-[0.08em] text-muted">03 / work</p>
         <p>Everything I&apos;ve built, stacked by year. Pick a crate and the arm will bring it to you.</p>
       </header>
       <div ref={stageRef} className="work-stage">
@@ -213,22 +213,22 @@ export default function Projects() {
           ))}
         </div>
         {open && (
-          <article className="card" aria-live="polite">
-            <header>
+          <article className="absolute top-4 right-0 grid w-[min(24rem,46%)] gap-[0.6rem] border border-fg bg-bg p-4 text-[0.85rem] leading-[1.55] text-fg max-[700px]:inset-x-0 max-[700px]:top-auto max-[700px]:bottom-0 max-[700px]:w-auto" aria-live="polite">
+            <header className="flex justify-between gap-4 font-bold uppercase tracking-[0.04em]">
               <span>
                 {open.year} · {open.name}
               </span>
-              <button onClick={() => selectRef.current(null)} aria-label="Put it back">
+              <button className="cursor-pointer border-0 bg-transparent font-[inherit] text-inherit before:content-['['] after:content-[']']" onClick={() => selectRef.current(null)} aria-label="Put it back">
                 x
               </button>
             </header>
             <p>{open.blurb}</p>
-            <p className="muted">{open.stack}</p>
+            <p className="text-muted">{open.stack}</p>
             {open.stat && <p>→ {open.stat}</p>}
             {open.links && (
-              <nav>
+              <nav className="flex gap-4">
                 {open.links.map((l) => (
-                  <a key={l.href} href={l.href} target="_blank" rel="noreferrer">
+                  <a className="text-inherit" key={l.href} href={l.href} target="_blank" rel="noreferrer">
                     ↗ {l.label}
                   </a>
                 ))}
