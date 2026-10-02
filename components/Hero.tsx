@@ -15,12 +15,12 @@ const GRIP = 0.3; // letter centre sits this far below the tool tip
 const HALF_W = 9.6; // world half-width that must stay in view
 const HALF_H = 4.4;
 const CAM_Y = 3.4;
-const MOUNT = new THREE.Vector3(4.6, 7.3, 0); // ceiling switch the cord hangs from (kept within the right arm's reach)
-const CORD = 1.1; // rest length of the cord
+const SWITCH_X = 4.6; // the cord hangs from above the top edge of the view, at this x
+const KNOB_Y = 6.2; // where the knob rests (kept within the right arm's reach)
 const KNOB_GRIP = 0.35; // gripper holds the cord this far above the knob
 const PULL = 0.9; // cord travel that flips the switch
 
-type Phase = "scan" | "approach" | "grasp" | "lift" | "transfer" | "place" | "release" | "retract";
+type Phase = "scan" | "approach" | "grasp" | "lift" | "transfer" | "place" | "release" | "retract" | "handoff";
 type Letter = { state: "falling" | "ready" | "reserved" | "held" | "placed"; velocity: number; delay: number; floor: number; spin: number; el: HTMLElement; home: THREE.Vector3; pos: THREE.Vector3; roll: number; heldBy: Arm | null };
 type Arm = {
   phase: Phase;
@@ -43,14 +43,23 @@ const rand = (a: number, b: number) => a + Math.random() * (b - a);
 function pickPlace(arm: Arm, l: Letter, extra: Step[] = []) {
   l.state = "reserved";
   arm.active = l;
+  arm.mover.queue.push(...pick(arm, l), ...extra, ...place(arm, l));
+}
+
+function pick(arm: Arm, l: Letter): Step[] {
   const phase = (value: Phase) => () => { arm.phase = value; };
-  arm.mover.queue.push(
+  return [
     { run: phase("approach"), to: () => at(l.pos, 1.2), dur: 0.7 },
     { run: phase("grasp"), to: () => at(l.pos, 0), dur: 0.35 },
     { run: () => { l.state = "held"; l.heldBy = arm; arm.gripTarget = 1; }, dur: 0.2 },
     { run: phase("lift"), to: () => at(l.pos, 1.2), dur: 0.35 },
-    ...extra,
-    { run: phase("transfer"), to: () => at(l.home, 1.2), dur: 0.8 },
+  ];
+}
+
+function place(arm: Arm, l: Letter): Step[] {
+  const phase = (value: Phase) => () => { arm.phase = value; };
+  return [
+    { run: phase("transfer"), to: () => at(l.home, 1.2), pitch: 0, dur: 0.8 },
     { run: phase("place"), to: () => at(l.home, 0), dur: 0.35 },
     { run: () => {
         arm.phase = "release";
@@ -59,6 +68,51 @@ function pickPlace(arm: Arm, l: Letter, extra: Step[] = []) {
       }, dur: 0.2 },
     { run: phase("retract"), to: () => at(l.home, 1.2), dur: 0.3 },
     { run: () => { arm.phase = "scan"; arm.active = null; }, dur: 0.1 },
+  ];
+}
+
+const side = (arm: Arm) => Math.sign(arm.rest.x);
+const MEET_Y = 2.7; // tool height of the mid-air pass
+// Both arms reach the centre only with the tool horizontal, pointing at the other arm.
+const reachAcross = (arm: Arm) => (-side(arm) * Math.PI) / 2;
+
+/** `giver` caught a letter that belongs to `taker`'s half: pass it across mid-air, then `taker` places it. */
+function handoff(giver: Arm, taker: Arm, l: Letter, now: () => number) {
+  const h = { atMeet: false, taken: false, aborted: false, deadline: now() + 20 };
+  const stalled = () => h.aborted || now() > h.deadline;
+  const phase = (arm: Arm) => () => { arm.phase = "handoff"; };
+  const meet = (arm: Arm) => V(side(arm) * 0.15, MEET_Y, 0);
+  const abort = () => {
+    h.aborted = true;
+    taker.mover.queue = [];
+    taker.active = null; taker.phase = "scan"; taker.gripTarget = 0;
+  };
+
+  l.state = "reserved";
+  giver.active = l;
+  taker.active = l;
+  giver.mover.queue.push(
+    ...pick(giver, l),
+    { run: phase(giver), to: () => meet(giver), pitch: reachAcross(giver), roll: Math.PI * 2, dur: 1.1 },
+    { run: () => { h.atMeet = true; }, dur: 0.01 },
+    { until: () => h.taken || stalled(), dur: 0.01 },
+    { run: () => {
+        giver.gripTarget = 0;
+        // Nobody took it: drop it straight into its slot.
+        if (!h.taken) { l.heldBy = null; l.state = "placed"; l.pos.copy(l.home); l.roll = 0; }
+      }, to: () => V(side(giver) * 3.5, 3.8, 0), pitch: 0, dur: 0.6 },
+    { run: () => { giver.mover.roll = 0; giver.phase = "scan"; giver.active = null; }, dur: 0.1 },
+  );
+  taker.mover.queue.push(
+    { run: phase(taker), to: () => V(side(taker) * 2.5, 3.4, 0), pitch: reachAcross(taker), dur: 1.0 },
+    { until: () => h.atMeet || stalled(), dur: 0.01 },
+    { run: () => { if (!h.atMeet || l.heldBy !== giver) abort(); }, dur: 0.01 },
+    { to: () => meet(taker), dur: 0.5 },
+    { run: () => {
+        if (l.heldBy !== giver) return abort();
+        l.heldBy = taker; taker.gripTarget = 1; giver.gripTarget = 0; h.taken = true;
+      }, dur: 0.25 },
+    ...place(taker, l),
   );
 }
 
@@ -84,7 +138,6 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
   const lettersRef = useRef<HTMLDivElement>(null);
   const cordRef = useRef<SVGPolylineElement>(null);
   const knobRef = useRef<HTMLButtonElement>(null);
-  const mountRef = useRef<HTMLSpanElement>(null);
   const pullRef = useRef<() => void>(() => {});
 
   useEffect(() => {
@@ -122,6 +175,7 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
     });
 
     let simTime = 0;
+    const strays: Letter[] = []; // letters that landed in the other arm's lane and need a handoff
     const rain = () => {
       if (reduceMotion || arms.some((arm) => arm.pending) || switching) return;
       for (const arm of arms) {
@@ -142,10 +196,21 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
           l.roll = rand(-0.8, 0.8); l.spin = rand(-0.6, 0.6);
         });
       }
+      // One of them drops into the wrong lane, on the other arm's side.
+      strays.length = 0;
+      const lander = arms[Math.round(Math.random())];
+      const owner = arms.find((arm) => arm !== lander)!;
+      const stray = owner.own[Math.floor(Math.random() * owner.own.length)];
+      stray.pos.x = side(lander) * (0.9 + lander.own.length * 0.95);
+      strays.push(stray);
     };
     const plan = (arm: Arm) => () => {
       if (reduceMotion) return;
-      const available = arm.own.filter((l) => l.state === "ready");
+      const other = arms.find((a) => a !== arm)!;
+      const stray = strays.find((l) => l.state === "ready" && Math.sign(l.pos.x) === side(arm));
+      const otherIdle = other.phase === "scan" && !other.active && !other.pending && !other.drag && !other.service;
+      if (stray && otherIdle) return handoff(arm, other, stray, () => simTime);
+      const available = arm.own.filter((l) => l.state === "ready" && !strays.includes(l));
       available.sort((a, b) => arm.mover.tip.distanceToSquared(a.pos) - arm.mover.tip.distanceToSquared(b.pos));
       if (available[0]) pickPlace(arm, available[0]);
       else if (arm.own.every((l) => l.state === "placed")) {
@@ -162,6 +227,7 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
     // --- light switch: the right arm drops what it's doing, pulls the cord, the lights change ---
     // The cord is a rope (lib/rope.ts). Its end is pinned by the gripper, the visitor's pointer, or nothing.
     const rope = new Rope(10);
+    let cordLen = 1;
     let ropeHeld: Arm | null = null;
     let userPin: THREE.Vector3 | null = null;
     let flipped = false; // one toggle per pull
@@ -178,7 +244,7 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
         { to: () => grab().add(V(0.4, 0.2, 1.4)), dur: 0.9 }, // come round in front of the cord
         { to: grab, dur: 0.5 },
         { run: () => ((ropeHeld = arm), (arm.gripTarget = 1), delete knobRef.current!.dataset.waiting), dur: 0.3 },
-        { to: () => V(rope.ax, rope.ay - CORD + KNOB_GRIP - PULL, 0), dur: 1.2 }, // slow pull; the switch flips near the bottom
+        { to: () => V(rope.ax, rope.ay - cordLen + KNOB_GRIP - PULL, 0), dur: 1.2 }, // slow pull; the switch flips near the bottom
         { dur: 0.4 }, // hold
         { run: () => ((ropeHeld = null), (arm.gripTarget = 0)), dur: 0.25 },
         { to: () => arm.mover.tip.clone().add(V(0.6, 0.6, 1.2)), dur: 0.5 },
@@ -214,12 +280,12 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
       lettersEl.style.fontSize = `${ppu * 1.35}px`;
       const handle = notchRef.current?.firstElementChild as HTMLElement | null;
       if (handle) handle.style.height = `${Math.max(6, ppu * 0.32)}px`;
-      // Hang the cord from the switch mount, nudged down if the top edge would cut it off (narrow screens).
-      ray.setFromCamera(ndc.set(MOUNT.clone().project(camera).x, 1), camera);
+      // The cord comes down from above the top edge; the knob rests at KNOB_Y (or lower on short screens).
+      ray.setFromCamera(ndc.set(V(SWITCH_X, KNOB_Y, 0).project(camera).x, 1), camera);
       const top = ray.ray.intersectPlane(plane, V(0, 0, 0))?.y ?? Infinity;
-      rope.reset(MOUNT.x, Math.min(MOUNT.y, top - 0.25), CORD);
-      const m = toScreen(V(rope.ax, rope.ay, 0));
-      mountRef.current!.style.transform = `translate(${m.x}px, ${m.y}px) translate(-50%, -100%)`;
+      const anchorY = top + 0.8;
+      cordLen = anchorY - Math.min(KNOB_Y, top - 1.2);
+      rope.reset(SWITCH_X, anchorY, cordLen);
     };
     const ro = new ResizeObserver(resize);
     ro.observe(hero);
@@ -406,7 +472,7 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
           arm.service = null;
         }
         // Light switch takes over as soon as the arm's hands are empty; a reserved letter goes back to the pool.
-        if (arm.pending && !servicing && !arm.own.some((l) => l.heldBy === arm)) {
+        if (arm.pending && !servicing && !letters.some((l) => l.heldBy === arm)) {
           if (arm.active?.state === "reserved") arm.active.state = "ready";
           arm.active = null;
           arm.phase = "scan";
@@ -501,12 +567,15 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
       <svg className="cord" aria-hidden>
         <polyline ref={cordRef} />
       </svg>
-      <span ref={mountRef} className="pull-mount" aria-hidden />
       <button
         ref={knobRef}
         className="pull"
         aria-label="Toggle lights (dark mode): tap for the robot, or drag to pull it yourself"
       >
+        <svg className="pull-bulb" viewBox="0 0 24 34" aria-hidden>
+          <path d="M8 10V3h8v7l1.5 3a10 10 0 1 1-11 0Z" />
+          <path d="M8 5h8M8 8h8M10 10v7l-2 4m6-11v7l2 4M10 17h4" fill="none" />
+        </svg>
         <span className="pull-hit" aria-hidden />
         <span className="pull-tip" aria-hidden>
           let robo handle this,
@@ -531,6 +600,7 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
         <span className="pull-tip" aria-hidden>click me</span>
       </button>
       <div className="hero-bottom"><span>{telemetry.reduced ? "" : "drag a gripper"}</span></div>
+      <a className="hero-work-link" href="#selected-work">Selected work ↗</a>
     </div>
     <aside ref={controllerRef} id="hero-controller" className="controller" aria-label="Live C++ controller reference" inert={!drawerOpen} aria-hidden={!drawerOpen}>
       <header><span>{codeView === "cpp" ? "letter_controller.cpp" : "Hero.tsx / pickPlace"}</span><button className="controller-close" aria-label="Close controller hatch" disabled={drawerBusy} onClick={() => drawerAction.current()}>×</button></header>

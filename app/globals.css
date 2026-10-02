@@ -9,13 +9,17 @@
   --color-muted: var(--muted);
   --color-ascii: var(--ascii);
   --color-ascii-strong: var(--ascii-strong);
+  --color-accent: var(--accent);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* In the base layer so Tailwind utilities (margin, padding) can override it. */
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 :root {
@@ -24,6 +28,8 @@
   --muted: #8a8a8a;
   --ascii: #8a8a8a;
   --ascii-strong: #6f6f6f;
+  --accent: #f26a0f;
+  --nav-h: 4.8rem; /* sticky top nav; the hero is sized to fit beneath it */
   color-scheme: light;
 }
 
@@ -33,7 +39,12 @@
   --muted: #7a7a7a;
   --ascii: #6a6a6a;
   --ascii-strong: #8a8a8a;
+  --accent: #ff8a3d;
   color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 html,
@@ -107,35 +118,25 @@ canvas {
   position: absolute;
   left: 0;
   top: 0;
-  width: 14px;
-  height: 26px;
-  border: 1.5px solid var(--fg);
-  border-radius: 7px 7px 9px 9px;
-  background: var(--bg);
+  width: 24px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   cursor: grab;
   touch-action: none;
   z-index: 1;
 }
 
-.pull::after {
-  content: "";
-  position: absolute;
-  inset: 5px 4px;
-  border-radius: 3px;
-  background: var(--fg);
-  opacity: 0.25;
-}
-
-/* the ceiling switch the cord hangs from */
-.pull-mount {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 22px;
-  height: 9px;
-  border: 1.5px solid var(--fg);
-  border-radius: 2px 2px 0 0;
-  background: var(--bg);
+.pull-bulb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: var(--bg);
+  stroke: var(--fg);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   pointer-events: none;
 }
 
@@ -430,8 +431,12 @@ main > section + section {
 
 /* The handle and controller slide horizontally together. */
 .hero-layout { position: relative; overflow: hidden; }
-.hero-layout .hero { height: min(100svh, 72vw); min-height: 360px; }
+.hero-layout .hero { height: min(calc(100svh - var(--nav-h)), 72vw); min-height: 360px; }
 .hero-bottom { position: absolute; bottom: 1.75rem; left: 2rem; color: var(--muted); font-size: 9px; letter-spacing: 0.04em; pointer-events: none; }
+.hero-work-link { position: absolute; bottom: 1.75rem; right: 2rem; z-index: 2; color: var(--accent); font-size: 14px; letter-spacing: 0.04em; text-decoration: none; padding: 0.25rem 0; border-bottom: 1px solid transparent; cursor: pointer; }
+.hero-work-link:hover { border-bottom-color: var(--accent); }
+.hero-work-link:focus-visible { outline: 1px dashed var(--fg); outline-offset: 4px; }
+#selected-work, #about, #contact { scroll-margin-top: calc(var(--nav-h) + 1rem); }
 .hero-notch {
   position: absolute; top: 0; left: 0; width: 32px; height: 44px;
   display: grid; place-items: center; border: 0; padding: 0;
@@ -472,12 +477,15 @@ main > section + section {
 .controller a { color: var(--fg); white-space: nowrap; }
 .controller a:focus-visible, .controller-close:focus-visible { outline: 1px dashed var(--fg); outline-offset: 4px; }
 @media (max-width: 700px) {
+  :root { --nav-h: 5.6rem; }
   .hero-layout .hero { height: 72svh; min-height: 360px; }
   .controller { width: min(100%, 400px); padding: 1.5rem 2rem 1.5rem 1rem; gap: 0.9rem; }
   .controller-code { font-size: 9px; }
   .hero-bottom { left: 1rem; bottom: 1rem; }
+  .hero-work-link { right: 1rem; bottom: 1rem; }
 }
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   .hero-letters, html, body, .controller, .hero-notch span { transition: none; }
   .pull[data-waiting]::before { animation: none; }
 }

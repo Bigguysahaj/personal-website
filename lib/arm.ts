@@ -86,8 +86,8 @@ export function tipWorld(rig: ArmRig, out: THREE.Vector3) {
   return out.set(p.x, p.y, p.z).add(rig.root.position);
 }
 
-/** A queued step: optionally move the tip (`to` is evaluated when the step starts), run an action, take `dur` seconds. */
-export type Step = { to?: () => THREE.Vector3; roll?: number; pitch?: number; run?: () => void; dur: number };
+/** A queued step: optionally move the tip (`to` is evaluated when the step starts), run an action, take `dur` seconds. `until` holds the step (and the arm) until it returns true. */
+export type Step = { to?: () => THREE.Vector3; roll?: number; pitch?: number; run?: () => void; until?: () => boolean; dur: number };
 
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
@@ -118,6 +118,7 @@ export class Mover {
       this.restart();
     }
     const s = this.cur;
+    if (s.until && !s.until()) return;
     this.t += dt / Math.max(s.dur, 1e-3);
     const k = this.interpolate(Math.min(1, this.t));
     if (this.to) this.tip.lerpVectors(this.from, this.to, k);

@@ -45,7 +45,11 @@ export class AsciiRenderer {
     gl.setRenderTarget(null);
 
     ctx.clearRect(0, 0, this.w, this.h);
-    ctx.fillStyle = getComputedStyle(this.canvas).color; // theme-aware via CSS `color`
+    const style = getComputedStyle(this.canvas);
+    const base = style.color; // theme-aware via CSS `color`
+    const accent = style.getPropertyValue("--accent").trim() || base;
+    ctx.fillStyle = base;
+    let current = base;
     const n = RAMP.length - 1;
     for (let y = 0; y < rows; y++) {
       const row = (rows - 1 - y) * cols; // GL rows are bottom-up
@@ -53,6 +57,9 @@ export class AsciiRenderer {
         const i = (row + x) * 4;
         const lum = Math.sqrt((buf[i] * 0.299 + buf[i + 1] * 0.587 + buf[i + 2] * 0.114) / 255);
         if (lum < 0.08) continue;
+        // Saturated (coloured) surfaces draw in the accent colour; greys stay in the text colour.
+        const next = buf[i] - buf[i + 2] > buf[i] * 0.4 ? accent : base;
+        if (next !== current) ctx.fillStyle = current = next;
         ctx.fillText(RAMP[Math.min(n, 1 + Math.floor(lum * n))], x * cw, y * ch);
       }
     }

@@ -8,7 +8,7 @@ import { PROJECTS, type Project } from "@/content/projects";
 
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 const CRATE = { x: 1.2, y: 0.5, z: 0.6 };
-const STEP = { dy: 0.6, dz: 0.7, w: 4.6, y0: 0.3 }; // one step per year, rising away from the viewer
+const STEP = { dy: 0.6, dz: 0.7, w: 6.0, y0: 0.3 }; // one step per year, rising away from the viewer
 const COL = 1.4;
 const GRIP = 0.3; // crate centre below the tool tip
 const HIGH = 3.9; // travel height, clears every step
@@ -45,6 +45,7 @@ export default function Projects() {
 
     const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true, roughness: 0.7 });
     const crateMat = new THREE.MeshStandardMaterial({ color: 0x777777, flatShading: true, roughness: 0.8 });
+    const pickedMat = new THREE.MeshStandardMaterial({ color: 0xff7a1a, flatShading: true, roughness: 0.7 }); // drawn in the accent colour
     const add = (w: number, h: number, d: number, x: number, y: number, z: number, m = mat) => {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
       mesh.position.set(x, y, z);
@@ -73,6 +74,15 @@ export default function Projects() {
       scene.add(mesh);
       return { project, mesh, home, label: labels[i] };
     });
+
+    // The crate under the pointer lights up too (ASCII only; the name tag keeps its look).
+    let hovered: Crate | null = null;
+    for (const c of crates) {
+      c.label.addEventListener("pointerenter", () => (hovered = c));
+      c.label.addEventListener("pointerleave", () => (hovered = null));
+      c.label.addEventListener("focus", () => (hovered = c));
+      c.label.addEventListener("blur", () => (hovered = null));
+    }
 
     const rig = buildArm(mat);
     rig.root.position.copy(ARM_BASE);
@@ -133,7 +143,7 @@ export default function Projects() {
       h = stage.clientHeight;
       camera.aspect = w / h;
       const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-      const R = Math.max(4.2 / (t * camera.aspect), 3.3 / t);
+      const R = Math.max(4.9 / (t * camera.aspect), 3.3 / t);
       camera.position.set(TARGET.x, TARGET.y + R * 0.3, TARGET.z + R);
       camera.lookAt(TARGET);
       camera.updateProjectionMatrix();
@@ -168,6 +178,7 @@ export default function Projects() {
       if (held) tipWorld(rig, held.mesh.position).y -= GRIP;
 
       for (const c of crates) {
+        c.mesh.material = c === hovered || c === want || c === held ? pickedMat : mat;
         const front = c.mesh.position.clone().setZ(c.mesh.position.z + CRATE.z / 2);
         const s = toScreen(front);
         c.label.style.fontSize = `${ppuAt(front) * 0.16}px`;
@@ -187,13 +198,13 @@ export default function Projects() {
       io.disconnect();
       window.removeEventListener("keydown", onKey);
       scene.traverse((o) => o instanceof THREE.Mesh && o.geometry.dispose());
-      [mat, crateMat].forEach((m) => m.dispose());
+      [mat, crateMat, pickedMat].forEach((m) => m.dispose());
       ascii.dispose();
     };
   }, []);
 
   return (
-    <section className="work">
+    <section className="work" id="selected-work">
       <header>
         <p className="label">03 / work</p>
         <p>Everything I&apos;ve built, stacked by year. Pick a crate and the arm will bring it to you.</p>
@@ -223,7 +234,7 @@ export default function Projects() {
               </button>
             </header>
             <p>{open.blurb}</p>
-            <p className="muted">{open.stack}</p>
+            {open.stack && <p className="muted">{open.stack}</p>}
             {open.stat && <p>→ {open.stat}</p>}
             {open.links && (
               <nav>

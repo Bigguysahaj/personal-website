@@ -3,14 +3,14 @@ export type Project = {
   name: string;
   year: number; // which step of the timeline it sits on
   blurb: string;
-  stack: string;
+  stack?: string;
   stat?: string;
   links?: { label: string; href: string }[];
 };
 
 const gh = (repo: string) => ({ label: "github", href: `https://github.com/Bigguysahaj/${repo}` });
 
-// At most 3 per year. Order within a year = left to right.
+// At most 4 per year. Order within a year = left to right.
 export const PROJECTS: Project[] = [
   {
     tag: "SHRAVAN",
@@ -121,5 +121,14 @@ export const PROJECTS: Project[] = [
     year: 2026,
     blurb: "ASCII robots built on hand-written forward and inverse kinematics. The arm that just handed you this is one of them.",
     stack: "next.js · three.js · typescript",
+  },
+  {
+    tag: "NIRIKSH",
+    name: "Niriksh",
+    year: 2026,
+    blurb: "A cybercrime operations centre: clusters complaints into scam patterns, then an Awareness Studio turns verified ones into public warnings (60-second video, image or text). Nothing publishes without human approval. Built for Build What Moves India, sponsored by OpenAI.",
+    stack: "chatgpt · minimax (fal) · whatsapp",
+    stat: "selected: top 250 of 13,000 applications",
+    links: [{ label: "site", href: "https://niriksh.scopophobic.xyz/" }, { label: "post", href: "https://x.com/bigguysahaj/status/2097919017499656547" }],
   },
 ];
