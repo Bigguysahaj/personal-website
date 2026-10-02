@@ -27,7 +27,15 @@ export default function Projects() {
   const labelsRef = useRef<HTMLDivElement>(null);
   const yearsRef = useRef<HTMLDivElement>(null);
   const selectRef = useRef<(i: number | null) => void>(() => {});
+  const cardRef = useRef<HTMLElement>(null);
   const [open, setOpen] = useState<Project | null>(null);
+  const [picked, setPicked] = useState<number | null>(null);
+  const toggle = (i: number) => selectRef.current(picked === i ? null : i);
+
+  // Phones show the card below the list, so bring it into view once the arm hands it over.
+  useEffect(() => {
+    if (open && matchMedia("(max-width: 700px)").matches) cardRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [open]);
 
   useEffect(() => {
     const stage = stageRef.current!;
@@ -126,6 +134,7 @@ export default function Projects() {
 
     selectRef.current = (i) => {
       want = i === null ? null : crates[i];
+      setPicked(i);
       if (reduceMotion) setOpen(want?.project ?? null);
     };
 
@@ -143,7 +152,7 @@ export default function Projects() {
       h = stage.clientHeight;
       camera.aspect = w / h;
       const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-      const R = Math.max(4.9 / (t * camera.aspect), 3.3 / t);
+      const R = Math.max((w < 700 ? 4.2 : 4.9) / (t * camera.aspect), 3.3 / t);
       camera.position.set(TARGET.x, TARGET.y + R * 0.3, TARGET.z + R);
       camera.lookAt(TARGET);
       camera.updateProjectionMatrix();
@@ -207,24 +216,42 @@ export default function Projects() {
     <section className="work" id="selected-work">
       <header>
         <p className="label">03 / work</p>
-        <p>Everything I&apos;ve built, stacked by year. Pick a crate and the arm will bring it to you.</p>
+        <p>Everything I&apos;ve built, stacked by year. Pick one and the arm will bring it to you.</p>
       </header>
-      <div ref={stageRef} className="work-stage">
-        <canvas ref={canvasRef} aria-hidden />
-        <div ref={yearsRef} className="work-years" aria-hidden>
-          {YEARS.map((y) => (
-            <span key={y}>{y}</span>
-          ))}
+      <div className="relative">
+        <div ref={stageRef} className="work-stage">
+          <canvas ref={canvasRef} aria-hidden />
+          <div ref={yearsRef} className="work-years" aria-hidden>
+            {YEARS.map((y) => (
+              <span key={y}>{y}</span>
+            ))}
+          </div>
+          {/* Phones get the list below instead: these tags shrink with the scene and become unreadable. */}
+          <div ref={labelsRef} className="work-crates max-[700px]:hidden">
+            {PROJECTS.map((p, i) => (
+              <button key={p.tag} onClick={() => toggle(i)} aria-label={`${p.name}, ${p.year}`}>
+                {p.tag}
+              </button>
+            ))}
+          </div>
         </div>
-        <div ref={labelsRef} className="work-crates">
-          {PROJECTS.map((p, i) => (
-            <button key={p.tag} onClick={() => selectRef.current(open?.name === p.name ? null : i)} aria-label={`${p.name}, ${p.year}`}>
-              {p.tag}
-            </button>
+        <ul className="hidden list-none gap-3 text-[13px] max-[700px]:grid" aria-label="Projects by year">
+          {[...YEARS].reverse().map((y) => (
+            <li key={y} className="grid grid-cols-[3.25rem_1fr] items-baseline">
+              <span className="text-muted">{y}</span>
+              <span className="flex flex-wrap gap-1.5">
+                {PROJECTS.map((p, i) => p.year === y && (
+                  <button key={p.tag} onClick={() => toggle(i)} aria-pressed={picked === i}
+                    className="cursor-pointer border border-[color-mix(in_srgb,var(--fg)_20%,transparent)] bg-transparent px-2.5 py-1.5 font-mono text-xs tracking-[0.04em] text-fg aria-pressed:border-fg aria-pressed:bg-fg aria-pressed:text-bg">
+                    {p.name}
+                  </button>
+                ))}
+              </span>
+            </li>
           ))}
-        </div>
+        </ul>
         {open && (
-          <article className="card" aria-live="polite">
+          <article ref={cardRef} className="card" aria-live="polite">
             <header>
               <span>
                 {open.year} · {open.name}

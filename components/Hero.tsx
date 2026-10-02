@@ -273,8 +273,10 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
       camera.aspect = w / h;
       const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
       const dist = Math.max(HALF_W / (t * camera.aspect), HALF_H / t);
-      camera.position.set(0, CAM_Y + dist * 0.08, dist);
-      camera.lookAt(0, CAM_Y, 0);
+      // Phones see more height than HALF_H: keep the floor put and spend the extra above, where letters fall in.
+      const lookY = CAM_Y + (w <= 700 ? Math.max(0, dist * t - HALF_H) : 0);
+      camera.position.set(0, lookY + dist * 0.08, dist);
+      camera.lookAt(0, lookY, 0);
       camera.updateProjectionMatrix();
       ascii.setSize(w, h, w < 700 ? 8 : 12, Math.min(window.devicePixelRatio, 2));
       const ppu = toScreen(V(0, 0, 0)).y - toScreen(V(0, 1, 0)).y;
@@ -379,7 +381,7 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
         const d = Math.hypot(s.x - (e.clientX - r.left), s.y - (e.clientY - r.top));
         if (d < bestD) [best, bestD] = [arm, d];
       }
-      if (!best || (e.pointerType !== "mouse" && bestD > 80)) return;
+      if (!best || (e.pointerType !== "mouse" && bestD > 44)) return;
       dragging = best;
       best.drag = pointerWorld(e, V(0, 0, 0));
       hero.setPointerCapture(e.pointerId);
@@ -601,11 +603,17 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
         <span className="pull-hit" aria-hidden />
         <span className="pull-tip" aria-hidden>click me</span>
       </button>
-      <div aria-hidden className="pointer-events-none absolute bottom-7 left-8 z-[2] flex flex-col items-start gap-1 text-[11px] uppercase tracking-[0.12em] text-muted max-[700px]:bottom-4 max-[700px]:left-4">
+      <div aria-hidden className="pointer-events-none absolute bottom-7 left-8 z-[2] flex flex-col items-start gap-1 text-[11px] uppercase tracking-[0.12em] text-muted max-[700px]:hidden">
         <span>scroll</span>
         <span className="text-base leading-none motion-safe:animate-bounce">↓</span>
       </div>
-      <a className="hero-work-link" href="#selected-work">Selected work ↗</a>
+      <a className="hero-work-link max-[700px]:hidden" href="#selected-work">Selected work ↗</a>
+    </div>
+    {/* Phones: the scene is short, so the role line and the way in sit beneath it instead of over it. */}
+    <div className="hidden px-4 pt-2 pb-2 text-[13px] leading-relaxed tracking-[0.04em] max-[700px]:block">
+      <p className="text-fg">Robotics Application Engineer · Jacobi</p>
+      <p className="mt-1 text-muted">Tap the bulb to switch the lights. Drag an arm by its gripper.</p>
+      <a className="mt-5 inline-block border-b border-accent py-1 text-accent no-underline" href="#selected-work">Selected work ↓</a>
     </div>
     <aside ref={controllerRef} id="hero-controller" className="controller" aria-label="Live C++ controller reference" inert={!drawerOpen} aria-hidden={!drawerOpen}>
       <header><span>{codeView === "cpp" ? "letter_controller.cpp" : "Hero.tsx / pickPlace"}</span><button className="controller-close" aria-label="Close controller hatch" disabled={drawerBusy} onClick={() => drawerAction.current()}>×</button></header>

@@ -204,7 +204,8 @@ export default function Palletizer() {
     let theta = 0.35;
     const placeCamera = () => {
       const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-      const R = Math.max(8.5 / (t * camera.aspect), 3.8 / t);
+      // Phones crop the far end of the conveyor so the cell itself isn't tiny.
+      const R = Math.max((w < 700 ? 6.8 : 8.5) / (t * camera.aspect), 3.8 / t);
       const phi = 0.5;
       camera.position.set(
         TARGET.x + R * Math.sin(theta) * Math.cos(phi),
@@ -279,10 +280,11 @@ export default function Palletizer() {
         const perLayer = slots.length / LAYERS;
         const layer = Math.min(LAYERS, Math.floor(placed.length / perLayer) + 1);
         statsRef.current.textContent =
-          `boxes ${String(placed.length).padStart(2, "0")}/${slots.length}  ` +
-          `layer ${layer}/${LAYERS}  ` +
-          `cycle ${cycle ? cycle.toFixed(1) + "s" : "--"}  ` +
-          `${cycle ? (60 / cycle).toFixed(1) : "--"} picks/min`;
+          // Non-breaking inside each reading, so a narrow bar wraps between them, never through one.
+          `boxes\u00a0${String(placed.length).padStart(2, "0")}/${slots.length}  ` +
+          `layer\u00a0${layer}/${LAYERS}  ` +
+          `cycle\u00a0${cycle ? cycle.toFixed(1) + "s" : "--"}  ` +
+          `${cycle ? (60 / cycle).toFixed(1) : "--"}\u00a0picks/min`;
       }
     };
     tick();

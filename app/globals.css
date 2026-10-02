@@ -263,6 +263,12 @@ main > section + section {
   margin-top: 6rem;
 }
 
+@media (max-width: 700px) {
+  main > section + section {
+    margin-top: 4.5rem;
+  }
+}
+
 .pallet header,
 .work header {
   max-width: 40rem;
@@ -316,6 +322,29 @@ main > section + section {
   white-space: pre;
   margin-left: auto;
   color: var(--fg);
+}
+
+@media (max-width: 700px) {
+  .pallet-stage {
+    height: 72vw;
+    min-height: 240px;
+  }
+
+  .pallet-bar {
+    gap: 0.5rem 1.25rem;
+  }
+
+  /* finger-sized targets */
+  .pallet-bar button {
+    padding: 0.45rem 0.2rem;
+  }
+
+  .pallet-bar output {
+    flex-basis: 100%;
+    margin-left: 0;
+    white-space: pre-wrap;
+    font-size: 0.75rem;
+  }
 }
 
 /* --- work: project crates --- */
@@ -420,12 +449,16 @@ main > section + section {
 }
 
 @media (max-width: 700px) {
+  .work-stage {
+    height: 84vw;
+    min-height: 300px;
+  }
+
+  /* in the page flow under the project list, not over the scene */
   .card {
-    left: 0;
-    right: 0;
-    top: auto;
-    bottom: 0;
+    position: static;
     width: auto;
+    margin-top: 1.25rem;
   }
 }
 
@@ -476,11 +509,10 @@ main > section + section {
 .controller a { color: var(--fg); white-space: nowrap; }
 .controller a:focus-visible, .controller-close:focus-visible { outline: 1px dashed var(--fg); outline-offset: 4px; }
 @media (max-width: 700px) {
-  :root { --nav-h: 5.6rem; }
-  .hero-layout .hero { height: 72svh; min-height: 360px; }
+  :root { --nav-h: 3.5rem; }
+  .hero-layout .hero { height: max(250px, 68vw); min-height: 0; }
   .controller { width: min(100%, 400px); padding: 1.5rem 2rem 1.5rem 1rem; gap: 0.9rem; }
-  .controller-code { font-size: 9px; }
-  .hero-work-link { right: 1rem; bottom: 1rem; }
+  .controller-code { font-size: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

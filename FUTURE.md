@@ -19,6 +19,15 @@ Hovering an arm (or a small picker next to it) lets the visitor swap it for a di
 - A small spec card: model, DOF, reach, payload, and one line on what I did with it.
 - Only use public specs and my own code. Nothing from Jacobi's proprietary codebase goes on the public site (NDA).
 
+## A thread that follows you down the page
+
+A single line (cable, wire, or robot hose, to fit the theme) that runs through the whole page and draws itself as you scroll, tying the sections together into one follow-through. A lot of sites do this now.
+
+- One SVG path running the full page height, behind the content. `stroke-dasharray` / `stroke-dashoffset` driven by scroll progress so it "draws" as you go (CSS scroll-driven animations `animation-timeline: scroll()` where supported, a small scroll listener otherwise).
+- It could start from the light-switch cord in the hero and end at the contact links, looping around each section's scene on the way (around the pallet, through the crate stairs).
+- Recompute the path on resize from each section's bounding box; on phones, keep it to a simple line down the left gutter so it never crosses text.
+- Respect `prefers-reduced-motion`: show it fully drawn, no scroll animation.
+
 ## Other ideas
 
 - `/lab`: an IK playground. Drag the target, read `q[0..5]` live, toggle elbow-up/down. It's a showcase for `lib/kinematics.ts`.
