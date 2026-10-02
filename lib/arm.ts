@@ -10,12 +10,12 @@ export type ArmRig = {
   q: Joints;
 };
 
-/** Meshes for the arm. Joint i is a Group rotated by q[i]; dimensions come from kinematics.ts. */
-export function buildArm(mat: THREE.Material): ArmRig {
+/** Meshes for the arm. Joint i is a Group rotated by q[i]; dimensions come from kinematics.ts. `accent` (optional) is used for the joints. */
+export function buildArm(mat: THREE.Material, accent: THREE.Material = mat): ArmRig {
   const root = new THREE.Group();
 
-  const mesh = (parent: THREE.Object3D, geo: THREE.BufferGeometry, y = 0, rx = 0, rz = 0) => {
-    const m = new THREE.Mesh(geo, mat);
+  const mesh = (parent: THREE.Object3D, geo: THREE.BufferGeometry, y = 0, rx = 0, rz = 0, material: THREE.Material = mat) => {
+    const m = new THREE.Mesh(geo, material);
     m.position.y = y;
     m.rotation.set(rx, 0, rz);
     parent.add(m);
@@ -34,22 +34,22 @@ export function buildArm(mat: THREE.Material): ArmRig {
   mesh(root, new THREE.CylinderGeometry(0.75, 0.9, 0.5, 24), 0.25);
 
   const j1 = joint(root, 0.5); // base yaw
-  mesh(j1, new THREE.CylinderGeometry(0.5, 0.6, 0.5, 20), 0.25);
+  mesh(j1, new THREE.CylinderGeometry(0.5, 0.6, 0.5, 20), 0.25, 0, 0, accent);
 
   const j2 = joint(j1, H0 - 0.5); // shoulder
-  mesh(j2, cyl(0.45, 0.9), 0, Z);
+  mesh(j2, cyl(0.45, 0.9), 0, Z, 0, accent);
   mesh(j2, box(0.55, L1), L1 / 2);
 
   const j3 = joint(j2, L1); // elbow
-  mesh(j3, cyl(0.38, 0.75), 0, Z);
+  mesh(j3, cyl(0.38, 0.75), 0, Z, 0, accent);
   mesh(j3, box(0.42, L2), L2 / 2);
 
   const j4 = joint(j3, L2); // wrist lean
-  mesh(j4, cyl(0.3, 0.6), 0, Z);
+  mesh(j4, cyl(0.3, 0.6), 0, Z, 0, accent);
   mesh(j4, box(0.32, W1), W1 / 2);
 
   const j5 = joint(j4, W1); // wrist tilt
-  mesh(j5, cyl(0.24, 0.5), 0, 0, Z);
+  mesh(j5, cyl(0.24, 0.5), 0, 0, Z, accent);
   mesh(j5, box(0.3, W2 - TIP), (W2 - TIP) / 2);
 
   const j6 = joint(j5, W2 - TIP); // tool roll

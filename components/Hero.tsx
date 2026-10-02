@@ -156,6 +156,7 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
     scene.add(rim);
 
     const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true, roughness: 0.6 });
+    const jointMat = new THREE.MeshStandardMaterial({ color: 0xff7a1a, flatShading: true, roughness: 0.6 }); // joints + end effector, drawn in the accent colour
     const ascii = new AsciiRenderer(canvasRef.current!);
 
     const letters: Letter[] = Array.from(lettersEl.children as HTMLCollectionOf<HTMLElement>).map((el) => {
@@ -165,7 +166,7 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
     });
 
     const arms: Arm[] = [-1, 1].map((side) => {
-      const rig = buildArm(mat);
+      const rig = buildArm(mat, jointMat);
       rig.root.position.set(side * ARM_X, 0, ARM_Z);
       scene.add(rig.root);
       const rest = V(side * 5.2, 2.8, 0);
@@ -555,6 +556,7 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
       hero.removeEventListener("touchmove", blockScroll);
       scene.traverse((o) => o instanceof THREE.Mesh && o.geometry.dispose());
       mat.dispose();
+      jointMat.dispose();
       ascii.dispose();
     };
   }, []);
@@ -599,7 +601,10 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
         <span className="pull-hit" aria-hidden />
         <span className="pull-tip" aria-hidden>click me</span>
       </button>
-      <div className="hero-bottom"><span>{telemetry.reduced ? "" : "drag a gripper"}</span></div>
+      <div aria-hidden className="pointer-events-none absolute bottom-7 left-8 z-[2] flex flex-col items-start gap-1 text-[11px] uppercase tracking-[0.12em] text-muted max-[700px]:bottom-4 max-[700px]:left-4">
+        <span>scroll</span>
+        <span className="text-base leading-none motion-safe:animate-bounce">↓</span>
+      </div>
       <a className="hero-work-link" href="#selected-work">Selected work ↗</a>
     </div>
     <aside ref={controllerRef} id="hero-controller" className="controller" aria-label="Live C++ controller reference" inert={!drawerOpen} aria-hidden={!drawerOpen}>
