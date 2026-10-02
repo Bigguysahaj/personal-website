@@ -98,6 +98,7 @@ export default function Palletizer() {
     const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true, roughness: 0.7 });
     // Darker greys pick different characters, so boxes and pallet read apart from the arm.
     const boxMat = new THREE.MeshStandardMaterial({ color: 0x9a9a9a, flatShading: true, roughness: 0.7 });
+    const pickedMat = new THREE.MeshStandardMaterial({ color: 0xff7a1a, flatShading: true, roughness: 0.7 }); // drawn in the accent colour
     const cellMat = new THREE.MeshStandardMaterial({ color: 0x707070, flatShading: true, roughness: 0.7 });
     const boxGeo = new THREE.BoxGeometry(BOX.x, BOX.y, BOX.z);
     buildCell(scene, cellMat);
@@ -172,6 +173,7 @@ export default function Palletizer() {
           run: () => {
             b.mesh.position.copy(slot.pos);
             b.mesh.rotation.y = slot.yaw;
+            b.mesh.material = boxMat;
             placed.push(b);
             held = null;
           },
@@ -266,6 +268,7 @@ export default function Palletizer() {
       solveIK(rig, mover.tip, 0, 0);
       if (held) {
         tipWorld(rig, tmp);
+        held.mesh.material = pickedMat;
         held.mesh.position.set(tmp.x, tmp.y - BOX.y / 2, tmp.z);
         held.mesh.rotation.y += ((held.slot?.yaw ?? 0) - held.mesh.rotation.y) * (1 - Math.exp(-dt * 4));
       }
@@ -294,7 +297,7 @@ export default function Palletizer() {
       stage.removeEventListener("pointercancel", onUp);
       scene.traverse((o) => o instanceof THREE.Mesh && o.geometry.dispose());
       boxGeo.dispose();
-      [mat, boxMat, cellMat].forEach((m) => m.dispose());
+      [mat, boxMat, pickedMat, cellMat].forEach((m) => m.dispose());
       ascii.dispose();
       ctrl.current = null;
     };
