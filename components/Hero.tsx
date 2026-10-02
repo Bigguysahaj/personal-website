@@ -610,7 +610,7 @@ export default function Hero({ controllerSource, simulationSource }: { controlle
       <a className="hero-work-link max-[700px]:hidden" href="#selected-work">Selected work ↗</a>
     </div>
     {/* Phones: the scene is short, so the role line and the way in sit beneath it instead of over it. */}
-    <div className="hidden px-4 pt-2 pb-2 text-[13px] leading-relaxed tracking-[0.04em] max-[700px]:block">
+    <div className="hidden px-4 pt-4 pb-8 text-[13px] leading-relaxed tracking-[0.04em] max-[700px]:block">
       <p className="text-fg">Robotics Application Engineer · Jacobi</p>
       <p className="mt-1 text-muted">Tap the bulb to switch the lights. Drag an arm by its gripper.</p>
       <a className="mt-5 inline-block border-b border-accent py-1 text-accent no-underline" href="#selected-work">Selected work ↓</a>

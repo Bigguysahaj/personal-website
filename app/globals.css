@@ -265,7 +265,7 @@ main > section + section {
 
 @media (max-width: 700px) {
   main > section + section {
-    margin-top: 4.5rem;
+    margin-top: 0;
   }
 }
 
@@ -450,8 +450,8 @@ main > section + section {
 
 @media (max-width: 700px) {
   .work-stage {
-    height: 84vw;
-    min-height: 300px;
+    height: 70vw;
+    min-height: 250px;
   }
 
   /* in the page flow under the project list, not over the scene */
@@ -510,7 +510,18 @@ main > section + section {
 .controller a:focus-visible, .controller-close:focus-visible { outline: 1px dashed var(--fg); outline-offset: 4px; }
 @media (max-width: 700px) {
   :root { --nav-h: 3.5rem; }
-  .hero-layout .hero { height: max(250px, 68vw); min-height: 0; }
+  /* Every section fills the screen under the sticky nav; the hero's scene takes whatever the intro leaves. */
+  .hero-layout { display: flex; flex-direction: column; min-height: calc(100svh - var(--nav-h)); }
+  .hero-layout .hero { flex: 1 1 auto; height: auto; min-height: 250px; }
+  main { padding: 0 1rem; }
+  main > section {
+    min-height: calc(100svh - var(--nav-h));
+    padding: 2.5rem 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  #selected-work, #about, #contact { scroll-margin-top: var(--nav-h); }
   .controller { width: min(100%, 400px); padding: 1.5rem 2rem 1.5rem 1rem; gap: 0.9rem; }
   .controller-code { font-size: 10px; }
 }
