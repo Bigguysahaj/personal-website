@@ -511,8 +511,8 @@ main > section + section {
 @media (max-width: 700px) {
   :root { --nav-h: 3.5rem; }
   /* Every section fills the screen under the sticky nav; the hero's scene takes whatever the intro leaves. */
-  .hero-layout { display: flex; flex-direction: column; min-height: calc(100svh - var(--nav-h)); }
-  .hero-layout .hero { flex: 1 1 auto; height: auto; min-height: 250px; }
+  .hero-layout { display: flex; flex-direction: column; justify-content: center; min-height: calc(100svh - var(--nav-h)); }
+  .hero-layout .hero { flex: none; height: max(300px, 85vw); }
   main { padding: 0 1rem; }
   main > section {
     min-height: calc(100svh - var(--nav-h));
